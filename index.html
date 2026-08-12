@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="auto" data-fontscale="md">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#F7F7F9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111114" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="雀タイマー">
+  <title>麻雀対局タイマー</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- JS が起動すると app.js が除去する。file:// 直開きなど JS 不動作時のみ表示される -->
+  <div class="boot-error" id="boot-error">
+    <strong>アプリを起動できませんでした</strong>
+    <p>index.html を直接ダブルクリックして開くと動作しません（ブラウザの制限）。<br>
+    同じフォルダの <b>「起動.bat」をダブルクリック</b>するか、<br>
+    Webサーバー（GitHub Pages 等）に配置して開いてください。</p>
+  </div>
+
+  <header class="topbar">
+    <span class="app-title">🀄 対局タイマー</span>
+    <div class="topbar-actions">
+      <button type="button" id="btn-pause" class="topbar-btn">⏸ 停止</button>
+      <button type="button" id="btn-history" class="topbar-btn" aria-label="保存ログ">ログ</button>
+      <button type="button" id="btn-settings" class="topbar-btn" aria-label="設定">設定</button>
+      <button type="button" id="btn-guide" class="topbar-btn" aria-label="使い方ガイド">？</button>
+    </div>
+  </header>
+
+  <main class="board" id="board">
+    <div class="tile-slot slot-north" id="slot-north"></div>
+    <div class="mid-row">
+      <div class="tile-slot slot-west" id="slot-west"></div>
+      <button type="button" class="table-center" id="table-center" aria-label="手番送り">
+        <span class="center-hint" id="center-hint">最初に考える人をタップ</span>
+        <span class="center-count" id="center-count"></span>
+      </button>
+      <div class="tile-slot slot-east" id="slot-east"></div>
+    </div>
+    <div class="tile-slot slot-south" id="slot-south"></div>
+  </main>
+
+  <footer class="callbar">
+    <div class="call-row">
+      <button type="button" class="result-btn ron" data-result="ron">ロン</button>
+      <button type="button" class="result-btn tsumo" data-result="tsumo">ツモ</button>
+      <button type="button" class="result-btn ryukyoku" data-result="ryukyoku">流局</button>
+      <button type="button" class="undo-btn" id="btn-undo">↩ Undo</button>
+    </div>
+  </footer>
+
+  <!-- 記録保存トースト（局終了時に一瞬表示） -->
+  <div class="toast" id="toast"></div>
+
+  <!-- 設定 -->
+  <div class="modal-backdrop" id="modal-settings">
+    <div class="modal-sheet scroll">
+      <div class="sheet-header">
+        <h2>設定</h2>
+        <button type="button" class="close-btn" data-close="settings" aria-label="閉じる">✕</button>
+      </div>
+      <h3>人数（変更でタイマー初期化・記録は残る）</h3>
+      <div class="setting-row" id="player-count-row">
+        <button type="button" class="preset-btn count-btn" data-count="4">4人打ち</button>
+        <button type="button" class="preset-btn count-btn" data-count="3">3人打ち</button>
+      </div>
+      <h3>名前</h3>
+      <div id="player-settings"></div>
+      <h3>持ち時間（変更で全員リセット）</h3>
+      <div id="time-presets" class="preset-grid"></div>
+      <div class="setting-row">
+        <input type="number" id="time-custom" min="1" max="180" placeholder="自由入力（分）" inputmode="numeric">
+        <button type="button" class="secondary-btn" id="btn-time-custom">適用</button>
+      </div>
+      <label class="setting-row toggle-row"><span>時間切れ後の延長（1回）</span>
+        <select id="select-overtime">
+          <option value="0">なし（切れ負け）</option>
+          <option value="60000">1分</option>
+          <option value="180000">3分</option>
+          <option value="300000">5分</option>
+        </select></label>
+      <h3>動作</h3>
+      <label class="setting-row toggle-row"><span>効果音</span>
+        <input type="checkbox" id="toggle-sound" class="switch"></label>
+      <label class="setting-row toggle-row"><span>バイブレーション</span>
+        <input type="checkbox" id="toggle-vibration" class="switch"></label>
+      <label class="setting-row toggle-row"><span>テーマ</span>
+        <select id="select-theme">
+          <option value="auto">自動</option>
+          <option value="light">ライト</option>
+          <option value="dark">ダーク</option>
+        </select></label>
+      <label class="setting-row toggle-row"><span>文字サイズ</span>
+        <select id="select-fontscale">
+          <option value="sm">小</option>
+          <option value="md">標準</option>
+          <option value="lg">大</option>
+        </select></label>
+      <h3>対局</h3>
+      <button type="button" class="primary-btn" id="btn-new-game">新しい対局を開始（記録は残る）</button>
+    </div>
+  </div>
+
+  <!-- 保存ログ -->
+  <div class="modal-backdrop" id="modal-history">
+    <div class="modal-sheet scroll">
+      <div class="sheet-header">
+        <h2>保存ログ</h2>
+        <button type="button" class="close-btn" data-close="history" aria-label="閉じる">✕</button>
+      </div>
+      <p class="history-count" id="history-count"></p>
+      <div class="sheet-actions">
+        <button type="button" class="secondary-btn" id="btn-export-csv">CSV出力</button>
+        <button type="button" class="secondary-btn" id="btn-export-json">JSON出力</button>
+      </div>
+      <div id="history-list"></div>
+      <button type="button" class="danger-btn" id="btn-clear-records">記録を全削除</button>
+    </div>
+  </div>
+
+  <!-- 使い方ガイド（初回起動時に自動表示・右上「？」からいつでも） -->
+  <div class="modal-backdrop" id="modal-guide">
+    <div class="modal-sheet scroll">
+      <div class="sheet-header">
+        <h2>使い方ガイド</h2>
+        <button type="button" class="close-btn" data-close="guide" aria-label="閉じる">✕</button>
+      </div>
+
+      <ol class="guide-steps">
+        <li>
+          <span class="guide-icon">👆</span>
+          <div><strong>タップした人の時間が動く</strong><br>
+          最初に考える人（親）のタイルをタップすると計測開始。
+          打牌したら次の人をタップ。それだけです。</div>
+        </li>
+        <li>
+          <span class="guide-icon">🀄</span>
+          <div><strong>鳴きも同じ</strong><br>
+          ポン・チー・カンで手番が飛んだら、<b>鳴いた人のタイルをタップ</b>。
+          タイマーがその人に移ります。順番どおりに進むだけなら中央の卓タップでもOK。</div>
+        </li>
+        <li>
+          <span class="guide-icon">🏁</span>
+          <div><strong>局が終わったら</strong><br>
+          <b>ロン / ツモ / 流局</b> をポン、と1回。その場で記録が保存され、
+          すぐ次の局を始められます（画面中央の「記録 n局」が保存の証拠）。</div>
+        </li>
+        <li>
+          <span class="guide-icon">↩️</span>
+          <div><strong>間違えたら Undo</strong><br>
+          手番・時間・直前の記録まで、1手ずつ戻せます（20手まで）。</div>
+        </li>
+        <li>
+          <span class="guide-icon">⏱️</span>
+          <div><strong>時間切れになったら</strong><br>
+          持ち時間（10分）を使い切ると<b>自動で3分の延長</b>が1回つきます（タイルに「延長」表示）。
+          延長も使い切ると点滅して停止。残り30秒で黄色、10秒で赤になります。</div>
+        </li>
+        <li>
+          <span class="guide-icon">📋</span>
+          <div><strong>記録を見る・出す</strong><br>
+          右上「ログ」で各局の思考時間を確認、CSV / JSON で出力できます。
+          設定の「<b>新しい対局を開始</b>」はタイマーだけ初期化 — 記録は消えません。</div>
+        </li>
+      </ol>
+
+      <button type="button" class="primary-btn" id="btn-guide-start" data-close="guide">はじめる</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

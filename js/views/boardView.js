@@ -1,0 +1,84 @@
+/**
+ * BoardView — 卓と各プレイヤータイルの描画・タップ処理
+ */
+import { WARN_YELLOW_MS, WARN_RED_MS } from '../core/store.js';
+import { formatMs } from '../core/exporter.js';
+
+const SEAT_MARKS = ['東', '南', '西', '北'];
+
+export class BoardView {
+  /**
+   * @param {import('../core/store.js').GameStore} store
+   * @param {{onTileTap:(i:number)=>void, onCenterTap:()=>void}} handlers
+   */
+  constructor(store, handlers) {
+    this.store = store;
+    this.handlers = handlers;
+    this.tiles = [];
+    this.el = {
+      board: document.getElementById('board'),
+      center: document.getElementById('table-center'),
+      centerHint: document.getElementById('center-hint'),
+      centerCount: document.getElementById('center-count'),
+    };
+    this.buildTiles();
+    this.el.center.addEventListener('click', () => this.handlers.onCenterTap());
+  }
+
+  /** 人数変更・復元時に呼び直せるよう、スロットを空にしてから作り直す */
+  buildTiles() {
+    const slots = ['slot-east', 'slot-south', 'slot-west', 'slot-north'];
+    for (const id of slots) document.getElementById(id).innerHTML = '';
+    this.tiles = [];
+    this.store.state.players.forEach((p, i) => {
+      const slot = document.getElementById(slots[i]);
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'player-tile';
+      tile.dataset.index = String(i);
+      tile.innerHTML = `
+        <span class="tile-head">
+          <span class="seat-mark">${SEAT_MARKS[i]}</span>
+          <span class="tile-name"></span>
+          <span class="overtime-badge">延長</span>
+        </span>
+        <span class="tile-time">0:00</span>`;
+      tile.addEventListener('click', () => this.handlers.onTileTap(i));
+      slot.appendChild(tile);
+      this.tiles.push({
+        root: tile,
+        name: tile.querySelector('.tile-name'),
+        time: tile.querySelector('.tile-time'),
+      });
+    });
+  }
+
+  render() {
+    const s = this.store.state;
+    s.players.forEach((p, i) => {
+      const t = this.tiles[i];
+      const active = i === s.activeIndex;
+      t.name.textContent = p.name;
+      t.time.textContent = formatMs(p.remainingMs);
+      t.root.style.setProperty('--player-color', p.color);
+      t.root.classList.toggle('active', active && s.phase !== 'idle');
+      t.root.classList.toggle('running', active && s.phase === 'running');
+      t.root.classList.toggle('overtime', p.overtimeUsed && p.remainingMs > 0);
+      t.root.classList.toggle('warn-yellow', p.remainingMs <= WARN_YELLOW_MS && p.remainingMs > WARN_RED_MS);
+      t.root.classList.toggle('warn-red', p.remainingMs <= WARN_RED_MS && p.remainingMs > 0);
+      t.root.classList.toggle('timeup', p.remainingMs <= 0);
+    });
+
+    this.el.center.classList.toggle('paused', s.phase === 'paused');
+    const hints = {
+      idle: '最初に考える人をタップ',
+      running: '次に考える人をタップ',
+      paused: s.timeoutIndex !== null
+        ? `${s.players[s.timeoutIndex].name} 時間切れ — 続ける人をタップ`
+        : '一時停止中 — 続ける人をタップ',
+    };
+    this.el.centerHint.textContent = hints[s.phase] ?? '';
+    // 保存済みログ件数の常時表示（保存されていることが一目で分かる）
+    this.el.centerCount.textContent = s.records.length > 0 ? `記録 ${s.records.length}局` : '';
+  }
+}

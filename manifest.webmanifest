@@ -1,0 +1,17 @@
+{
+  "name": "麻雀対局タイマー",
+  "short_name": "雀タイマー",
+  "description": "競技麻雀・健康麻雀・セット麻雀向けの持ち時間制対局タイマー",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F7F7F9",
+  "theme_color": "#F7F7F9",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

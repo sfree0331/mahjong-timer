@@ -1,0 +1,505 @@
+/* =========================================================
+   麻雀対局タイマー — Apple 風・白ベース・影少なめ
+   ========================================================= */
+
+:root {
+  --bg: #F7F7F9;
+  --surface: #FFFFFF;
+  --surface2: #F1F1F4;
+  --text: #1C1C1E;
+  --text-sub: #8E8E93;
+  --line: rgba(0, 0, 0, 0.08);
+  --accent: #0A84FF;
+  --yellow: #B8860B;
+  --red: #FF3B30;
+  --green-felt: #2E7D32;
+  --radius: 16px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --fs: 1;
+  --tap-min: 60px;
+}
+
+html[data-fontscale="sm"] { --fs: 0.88; }
+html[data-fontscale="lg"] { --fs: 1.16; }
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme="auto"] {
+    --bg: #111114;
+    --surface: #1C1C1F;
+    --surface2: #28282C;
+    --text: #F2F2F7;
+    --text-sub: #98989F;
+    --line: rgba(255, 255, 255, 0.1);
+    --yellow: #FFD60A;
+    --red: #FF453A;
+    --shadow: none;
+  }
+}
+html[data-theme="dark"] {
+  --bg: #111114;
+  --surface: #1C1C1F;
+  --surface2: #28282C;
+  --text: #F2F2F7;
+  --text-sub: #98989F;
+  --line: rgba(255, 255, 255, 0.1);
+  --yellow: #FFD60A;
+  --red: #FF453A;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: calc(16px * var(--fs));
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+button:active { transform: scale(0.96); }
+button:disabled { opacity: 0.35; pointer-events: none; }
+
+/* ---------- トップバー ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  gap: 8px;
+  flex: none;
+}
+
+.app-title {
+  font-size: calc(15px * var(--fs));
+  font-weight: 700;
+  color: var(--text-sub);
+}
+
+.topbar-actions { display: flex; gap: 6px; }
+
+.topbar-btn {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: calc(14px * var(--fs));
+  font-weight: 500;
+  min-height: 40px;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- 起動エラー案内（file:// 直開き時のみ表示） ---------- */
+
+.boot-error {
+  margin: 24px 16px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  line-height: 1.8;
+  font-size: calc(14px * var(--fs));
+}
+.boot-error strong { color: var(--red); font-size: calc(16px * var(--fs)); }
+
+/* ---------- 盤面 ---------- */
+
+.board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 10px;
+  min-height: 0;
+}
+
+.mid-row {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  min-height: 0;
+}
+
+.tile-slot { display: flex; align-items: center; justify-content: center; }
+.slot-north, .slot-south { flex: none; }
+.slot-west, .slot-east { flex: 1; min-width: 0; }
+
+.table-center {
+  flex: 1.2;
+  align-self: center;
+  background: radial-gradient(circle at 50% 35%, #3B9142, var(--green-felt));
+  border-radius: 22px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 110px;
+  height: 100%;
+  max-height: 200px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25);
+  border: 4px solid rgba(0, 0, 0, 0.18);
+}
+.table-center.paused { filter: grayscale(0.5) brightness(0.9); }
+
+.center-hint {
+  font-size: calc(16px * var(--fs));
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0 10px;
+}
+.center-count { font-size: calc(12px * var(--fs)); opacity: 0.8; }
+
+/* ---------- プレイヤータイル ---------- */
+
+/* タイル = タップターゲット。高速対局でも押しやすいよう大きく取る */
+.player-tile {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 14px;
+  min-width: 128px;
+  min-height: 96px;
+  width: 100%;
+  height: 100%;
+  max-height: 200px;
+  text-align: center;
+}
+
+.slot-north, .slot-south { min-height: 110px; }
+.slot-north .player-tile, .slot-south .player-tile { width: min(80%, 420px); }
+
+.tile-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: calc(13px * var(--fs));
+}
+
+.seat-mark {
+  background: var(--player-color, var(--accent));
+  color: #fff;
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(12px * var(--fs));
+  font-weight: 700;
+  flex: none;
+}
+
+.tile-name {
+  font-weight: 600;
+  max-width: 9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overtime-badge {
+  display: none;
+  background: var(--yellow);
+  color: #fff;
+  font-size: calc(10px * var(--fs));
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 2px 7px;
+}
+.player-tile.overtime .overtime-badge { display: inline-block; }
+
+.tile-time {
+  font-size: calc(40px * var(--fs));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+/* 手番は光る */
+.player-tile.active {
+  border-color: var(--player-color, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--player-color, var(--accent)) 30%, transparent),
+              0 0 18px color-mix(in srgb, var(--player-color, var(--accent)) 45%, transparent);
+}
+
+/* 残り時間の警告色 */
+.player-tile.warn-yellow .tile-time { color: var(--yellow); }
+.player-tile.warn-red .tile-time { color: var(--red); }
+.player-tile.timeup .tile-time { color: var(--red); animation: blink 0.8s step-start infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@keyframes blink {
+  50% { opacity: 0.15; }
+}
+
+/* ---------- 3人打ち（サンマ） ---------- */
+
+body[data-players="3"] .slot-north { display: none; }
+
+/* ---------- 記録保存トースト ---------- */
+
+.toast {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translate(-50%, -16px);
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-size: calc(14px * var(--fs));
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 60;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- 操作バー ---------- */
+
+.callbar {
+  flex: none;
+  padding: 6px 10px calc(10px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.call-row { display: flex; gap: 8px; }
+
+.result-btn, .undo-btn {
+  flex: 1;
+  min-height: var(--tap-min);
+  border-radius: 14px;
+  font-size: calc(15px * var(--fs));
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.result-btn.ron { background: #FF3B30; color: #fff; border: none; }
+.result-btn.tsumo { background: #0A84FF; color: #fff; border: none; }
+.result-btn.ryukyoku { background: var(--surface2); }
+.undo-btn { background: var(--surface2); }
+
+/* ---------- モーダル ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 50;
+}
+.modal-backdrop.show { opacity: 1; pointer-events: auto; }
+
+.modal-sheet {
+  background: var(--surface);
+  border-radius: 22px 22px 0 0;
+  width: 100%;
+  max-width: 560px;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  transform: translateY(24px);
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal-backdrop.show .modal-sheet { transform: translateY(0); }
+.modal-sheet.scroll { overflow-y: auto; }
+
+.sheet-header { display: flex; align-items: center; justify-content: space-between; }
+.modal-sheet h2 { font-size: calc(19px * var(--fs)); }
+.modal-sheet h3 { font-size: calc(13px * var(--fs)); color: var(--text-sub); font-weight: 600; margin-top: 6px; }
+
+.close-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--surface2);
+  font-size: 16px;
+  flex: none;
+}
+
+.sheet-actions { display: flex; gap: 10px; }
+
+.primary-btn {
+  flex: 1;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 14px;
+  min-height: var(--tap-min);
+  font-size: calc(16px * var(--fs));
+  font-weight: 700;
+}
+.secondary-btn {
+  flex: 1;
+  background: var(--surface2);
+  border-radius: 14px;
+  min-height: 48px;
+  font-size: calc(15px * var(--fs));
+  font-weight: 600;
+  padding: 0 14px;
+}
+.danger-btn {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+  border-radius: 14px;
+  min-height: 52px;
+  font-size: calc(15px * var(--fs));
+  font-weight: 600;
+}
+
+/* 設定行 */
+.setting-row { display: flex; align-items: center; gap: 10px; }
+.player-row { margin-bottom: 8px; }
+
+.name-input, #time-custom {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: calc(15px * var(--fs));
+  color: var(--text);
+  min-height: 48px;
+  font-family: inherit;
+}
+
+.preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.preset-btn {
+  min-height: 48px;
+  border-radius: 12px;
+  background: var(--surface2);
+  font-size: calc(15px * var(--fs));
+  font-weight: 600;
+  border: 2px solid transparent;
+}
+.preset-btn.selected { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.toggle-row { justify-content: space-between; min-height: 48px; }
+
+.switch { appearance: none; width: 52px; height: 32px; border-radius: 16px; background: var(--surface2); position: relative; transition: background 0.2s; flex: none; }
+.switch:checked { background: #30D158; }
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: left 0.2s;
+}
+.switch:checked::after { left: 22px; }
+
+select {
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: calc(15px * var(--fs));
+  color: var(--text);
+  font-family: inherit;
+  min-height: 44px;
+}
+
+/* 使い方ガイド */
+.guide-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  counter-reset: step;
+}
+.guide-steps li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--surface2);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: calc(14px * var(--fs));
+  line-height: 1.65;
+}
+.guide-steps strong { font-size: calc(15px * var(--fs)); }
+.guide-icon { font-size: calc(22px * var(--fs)); flex: none; line-height: 1.3; }
+
+/* 履歴 */
+.history-count { color: var(--text-sub); font-size: calc(13px * var(--fs)); }
+
+.summary-table { width: 100%; border-collapse: collapse; font-size: calc(13px * var(--fs)); }
+.summary-table th, .summary-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--line); }
+.summary-table th { color: var(--text-sub); font-weight: 600; }
+
+.history-item { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.history-head { display: flex; align-items: center; gap: 8px; font-size: calc(14px * var(--fs)); }
+.history-time { margin-left: auto; color: var(--text-sub); font-size: calc(12px * var(--fs)); }
+.result-chip { border-radius: 8px; padding: 2px 8px; font-size: calc(11px * var(--fs)); font-weight: 700; color: #fff; }
+.result-ron { background: #FF3B30; }
+.result-tsumo { background: #0A84FF; }
+.result-ryukyoku { background: #8E8E93; }
+.history-players { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: calc(12px * var(--fs)); color: var(--text-sub); }
+
+.empty-note { color: var(--text-sub); text-align: center; padding: 24px 0; font-size: calc(14px * var(--fs)); }
+
+/* ---------- 横向き ---------- */
+
+@media (orientation: landscape) and (max-height: 560px) {
+  body { flex-direction: row; }
+  .topbar { flex-direction: column; justify-content: flex-start; padding: 12px 8px; }
+  .topbar-actions { flex-direction: column; }
+  .board { padding: 8px 4px; }
+  .callbar {
+    flex-direction: column;
+    justify-content: center;
+    width: 132px;
+    padding: 8px calc(8px + env(safe-area-inset-right)) 8px 4px;
+  }
+  .call-row { flex-direction: column; }
+  .result-btn, .undo-btn { min-height: 44px; }
+  .table-center { min-height: 90px; }
+  .tile-time { font-size: calc(24px * var(--fs)); }
+  .modal-backdrop { align-items: center; }
+  .modal-sheet { border-radius: 22px; max-height: 92dvh; }
+}

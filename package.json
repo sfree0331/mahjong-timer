@@ -1,0 +1,12 @@
+{
+  "name": "mahjong-timer",
+  "version": "1.0.0",
+  "description": "競技麻雀・健康麻雀・セット麻雀向けの持ち時間制対局タイマー PWA",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/store.test.mjs tests/exporter.test.mjs",
+    "serve": "npx http-server -p 8080 -c-1 ."
+  },
+  "license": "MIT"
+}
