@@ -12,7 +12,6 @@
   --accent: #0A84FF;
   --yellow: #B8860B;
   --red: #FF3B30;
-  --green-felt: #2E7D32;
   --radius: 16px;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   --fs: 1;
@@ -122,98 +121,77 @@ button:disabled { opacity: 0.35; pointer-events: none; }
 }
 .boot-error strong { color: var(--red); font-size: calc(16px * var(--fs)); }
 
-/* ---------- 盤面 ---------- */
+/* ---------- ステータスバー ---------- */
+
+.status-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 2px 16px 6px;
+  font-size: calc(14px * var(--fs));
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+.status-count {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 2px 10px;
+  font-size: calc(12px * var(--fs));
+  font-weight: 600;
+}
+
+/* ---------- 盤面（縦一列リスト） ---------- */
 
 .board {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 8px;
+  padding: 2px 12px;
   min-height: 0;
 }
 
-.mid-row {
-  flex: 1;
-  display: flex;
-  align-items: stretch;
-  gap: 6px;
-  min-height: 0;
-}
-
-.tile-slot { display: flex; align-items: center; justify-content: center; }
-.slot-north, .slot-south { flex: none; }
-.slot-west, .slot-east { flex: 1; min-width: 0; }
-
-.table-center {
-  flex: 1.2;
-  align-self: center;
-  background: radial-gradient(circle at 50% 35%, #3B9142, var(--green-felt));
-  border-radius: 22px;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 110px;
-  height: 100%;
-  max-height: 200px;
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25);
-  border: 4px solid rgba(0, 0, 0, 0.18);
-}
-.table-center.paused { filter: grayscale(0.5) brightness(0.9); }
-
-.center-hint {
-  font-size: calc(16px * var(--fs));
-  font-weight: 600;
-  line-height: 1.5;
-  padding: 0 10px;
-}
-.center-count { font-size: calc(12px * var(--fs)); opacity: 0.8; }
-
-/* ---------- プレイヤータイル ---------- */
-
-/* タイル = タップターゲット。高速対局でも押しやすいよう大きく取る */
+/* タイル = タップターゲット。1人1行で画面いっぱいに使う */
 .player-tile {
   background: var(--surface);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 12px 14px;
-  min-width: 128px;
-  min-height: 96px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  min-height: 68px;
   width: 100%;
-  height: 100%;
-  max-height: 200px;
-  text-align: center;
+  min-width: 0;
+  text-align: left;
 }
-
-.slot-north, .slot-south { min-height: 110px; }
-.slot-north .player-tile, .slot-south .player-tile { width: min(80%, 420px); }
 
 .tile-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: calc(13px * var(--fs));
+  gap: 10px;
+  font-size: calc(16px * var(--fs));
+  min-width: 0;
 }
 
 .seat-mark {
   background: var(--player-color, var(--accent));
   color: #fff;
-  border-radius: 6px;
-  width: 22px;
-  height: 22px;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(12px * var(--fs));
+  font-size: calc(15px * var(--fs));
   font-weight: 700;
   flex: none;
 }
@@ -263,10 +241,6 @@ button:disabled { opacity: 0.35; pointer-events: none; }
 @keyframes blink {
   50% { opacity: 0.15; }
 }
-
-/* ---------- 3人打ち（サンマ） ---------- */
-
-body[data-players="3"] .slot-north { display: none; }
 
 /* ---------- 記録保存トースト ---------- */
 
@@ -498,8 +472,9 @@ select {
   }
   .call-row { flex-direction: column; }
   .result-btn, .undo-btn { min-height: 44px; }
-  .table-center { min-height: 90px; }
-  .tile-time { font-size: calc(24px * var(--fs)); }
+  .status-bar { display: none; }
+  .player-tile { min-height: 48px; padding: 6px 16px; }
+  .tile-time { font-size: calc(28px * var(--fs)); }
   .modal-backdrop { align-items: center; }
   .modal-sheet { border-radius: 22px; max-height: 92dvh; }
 }

@@ -1,5 +1,5 @@
 /**
- * BoardView — 卓と各プレイヤータイルの描画・タップ処理
+ * BoardView — 縦一列のプレイヤーリストの描画・タップ処理
  */
 import { WARN_YELLOW_MS, WARN_RED_MS } from '../core/store.js';
 import { formatMs } from '../core/exporter.js';
@@ -9,29 +9,25 @@ const SEAT_MARKS = ['東', '南', '西', '北'];
 export class BoardView {
   /**
    * @param {import('../core/store.js').GameStore} store
-   * @param {{onTileTap:(i:number)=>void, onCenterTap:()=>void}} handlers
+   * @param {{onTileTap:(i:number)=>void}} handlers
    */
   constructor(store, handlers) {
     this.store = store;
     this.handlers = handlers;
     this.tiles = [];
     this.el = {
-      board: document.getElementById('board'),
-      center: document.getElementById('table-center'),
-      centerHint: document.getElementById('center-hint'),
-      centerCount: document.getElementById('center-count'),
+      list: document.getElementById('player-list'),
+      hint: document.getElementById('center-hint'),
+      count: document.getElementById('center-count'),
     };
     this.buildTiles();
-    this.el.center.addEventListener('click', () => this.handlers.onCenterTap());
   }
 
-  /** 人数変更・復元時に呼び直せるよう、スロットを空にしてから作り直す */
+  /** 人数変更・復元時に呼び直せるよう、リストを空にしてから作り直す */
   buildTiles() {
-    const slots = ['slot-east', 'slot-south', 'slot-west', 'slot-north'];
-    for (const id of slots) document.getElementById(id).innerHTML = '';
+    this.el.list.innerHTML = '';
     this.tiles = [];
     this.store.state.players.forEach((p, i) => {
-      const slot = document.getElementById(slots[i]);
       const tile = document.createElement('button');
       tile.type = 'button';
       tile.className = 'player-tile';
@@ -44,7 +40,7 @@ export class BoardView {
         </span>
         <span class="tile-time">0:00</span>`;
       tile.addEventListener('click', () => this.handlers.onTileTap(i));
-      slot.appendChild(tile);
+      this.el.list.appendChild(tile);
       this.tiles.push({
         root: tile,
         name: tile.querySelector('.tile-name'),
@@ -69,7 +65,6 @@ export class BoardView {
       t.root.classList.toggle('timeup', p.remainingMs <= 0);
     });
 
-    this.el.center.classList.toggle('paused', s.phase === 'paused');
     const hints = {
       idle: '最初に考える人をタップ',
       running: '次に考える人をタップ',
@@ -77,8 +72,8 @@ export class BoardView {
         ? `${s.players[s.timeoutIndex].name} 時間切れ — 続ける人をタップ`
         : '一時停止中 — 続ける人をタップ',
     };
-    this.el.centerHint.textContent = hints[s.phase] ?? '';
+    this.el.hint.textContent = hints[s.phase] ?? '';
     // 保存済みログ件数の常時表示（保存されていることが一目で分かる）
-    this.el.centerCount.textContent = s.records.length > 0 ? `記録 ${s.records.length}局` : '';
+    this.el.count.textContent = s.records.length > 0 ? `記録 ${s.records.length}局` : '';
   }
 }

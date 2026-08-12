@@ -34,18 +34,12 @@
     </div>
   </header>
 
-  <main class="board" id="board">
-    <div class="tile-slot slot-north" id="slot-north"></div>
-    <div class="mid-row">
-      <div class="tile-slot slot-west" id="slot-west"></div>
-      <button type="button" class="table-center" id="table-center" aria-label="手番送り">
-        <span class="center-hint" id="center-hint">最初に考える人をタップ</span>
-        <span class="center-count" id="center-count"></span>
-      </button>
-      <div class="tile-slot slot-east" id="slot-east"></div>
-    </div>
-    <div class="tile-slot slot-south" id="slot-south"></div>
-  </main>
+  <div class="status-bar">
+    <span id="center-hint">最初に考える人をタップ</span>
+    <span id="center-count" class="status-count"></span>
+  </div>
+
+  <main class="board" id="player-list"></main>
 
   <footer class="callbar">
     <div class="call-row">
@@ -144,7 +138,7 @@
           <span class="guide-icon">🀄</span>
           <div><strong>鳴きも同じ</strong><br>
           ポン・チー・カンで手番が飛んだら、<b>鳴いた人のタイルをタップ</b>。
-          タイマーがその人に移ります。順番どおりに進むだけなら中央の卓タップでもOK。</div>
+          タイマーがその人に移ります。</div>
         </li>
         <li>
           <span class="guide-icon">🏁</span>

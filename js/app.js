@@ -24,16 +24,7 @@ const ticker = new Ticker((delta) => store.tick(delta));
 
 // ---------- 操作ハンドラ ----------
 
-/** 卓（中央）タップ: 開始 → 次の人へ順送り → 再開 */
-function advance() {
-  const s = store.state;
-  if (s.phase === 'idle') store.start();
-  else if (s.phase === 'running') store.passTurn();
-  else if (s.phase === 'paused') store.resume();
-}
-
 const board = new BoardView(store, {
-  onCenterTap: advance,
   // タイルタップ = どの状態からでも「タップした人に飛んで計測が進む」
   onTileTap: (i) => store.tapPlayer(i),
 });
