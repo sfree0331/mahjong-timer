@@ -2,7 +2,7 @@
  * BoardView — 縦一列のプレイヤーリストの描画・タップ処理
  */
 import { WARN_YELLOW_MS, WARN_RED_MS } from '../core/store.js';
-import { formatMs } from '../core/exporter.js';
+import { formatMs, formatSec } from '../core/exporter.js';
 
 const SEAT_MARKS = ['東', '南', '西', '北'];
 
@@ -38,13 +38,17 @@ export class BoardView {
           <span class="tile-name"></span>
           <span class="overtime-badge">延長</span>
         </span>
-        <span class="tile-time">0:00</span>`;
+        <span class="tile-right">
+          <span class="tile-time">0:00</span>
+          <span class="tile-avg"></span>
+        </span>`;
       tile.addEventListener('click', () => this.handlers.onTileTap(i));
       this.el.list.appendChild(tile);
       this.tiles.push({
         root: tile,
         name: tile.querySelector('.tile-name'),
         time: tile.querySelector('.tile-time'),
+        avg: tile.querySelector('.tile-avg'),
       });
     });
   }
@@ -56,6 +60,10 @@ export class BoardView {
       const active = i === s.activeIndex;
       t.name.textContent = p.name;
       t.time.textContent = formatMs(p.remainingMs);
+      // この局の1打あたり平均思考時間（手番が来るまでは非表示）
+      t.avg.textContent = p.handTurns > 0
+        ? `1打平均 ${formatSec(p.handThinkMs / p.handTurns)}`
+        : '';
       t.root.style.setProperty('--player-color', p.color);
       t.root.classList.toggle('active', active && s.phase !== 'idle');
       t.root.classList.toggle('running', active && s.phase === 'running');

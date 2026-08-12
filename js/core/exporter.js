@@ -38,7 +38,7 @@ export function recordsToJson(records, meta = {}) {
 export function recordsToCsv(records) {
   const header = [
     'No', '結果', '開始', '終了',
-    'プレイヤー', '思考時間(秒)', '残り時間(秒)', '平均思考(秒)',
+    'プレイヤー', '思考時間(秒)', '手番数', '1打平均(秒)', '残り時間(秒)', '局平均思考(秒)',
   ];
   const rows = [header];
   for (const r of records) {
@@ -50,6 +50,8 @@ export function recordsToCsv(records) {
         isoOrEmpty(r.endedAt),
         p.name,
         msToSec(p.thinkMs),
+        p.turns ?? '',
+        p.avgTurnMs != null ? msToSec(p.avgTurnMs) : '',
         msToSec(p.remainingMs),
         msToSec(r.avgThinkMs),
       ]);
@@ -64,18 +66,26 @@ export function recordsToCsv(records) {
   return `﻿${body}`;
 }
 
-/** 記録から集計（プレイヤー別の合計・平均思考時間） */
+/** 記録から集計（プレイヤー別の合計・局平均・1打平均） */
 export function summarize(records) {
   const totals = {};
   for (const r of records) {
     for (const p of r.players) {
-      const t = (totals[p.name] ??= { thinkMs: 0, kyoku: 0 });
+      const t = (totals[p.name] ??= { thinkMs: 0, kyoku: 0, turns: 0 });
       t.thinkMs += p.thinkMs;
       t.kyoku += 1;
+      t.turns += p.turns ?? 0;
     }
   }
   for (const t of Object.values(totals)) {
-    t.avgThinkMs = t.kyoku ? Math.round(t.thinkMs / t.kyoku) : 0;
+    t.avgThinkMs = t.kyoku ? Math.round(t.thinkMs / t.kyoku) : 0;   // 局平均
+    t.avgTurnMs = t.turns ? Math.round(t.thinkMs / t.turns) : 0;    // 1打平均
   }
   return totals;
+}
+
+/** ms → "8秒" / "12.5秒" 表示（1打平均用） */
+export function formatSec(ms) {
+  const sec = Math.round(ms / 100) / 10;
+  return `${sec % 1 === 0 ? sec : sec.toFixed(1)}秒`;
 }

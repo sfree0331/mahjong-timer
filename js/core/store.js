@@ -24,6 +24,7 @@ function createPlayer(seatIndex, timeMs) {
     color: DEFAULT_COLORS[seatIndex],
     remainingMs: timeMs,
     handThinkMs: 0,        // 現在の局で使った思考時間
+    handTurns: 0,          // 現在の局の手番回数（1打平均の分母）
     overtimeUsed: false,   // 持ち時間切れ後の延長（1回）を使ったか
     warnStage: 0,          // 0:通常 1:30秒警告済 2:10秒警告済 3:切れ
   };
@@ -92,6 +93,7 @@ export class GameStore {
       players: this.state.players.map((p) => ({
         remainingMs: p.remainingMs,
         handThinkMs: p.handThinkMs,
+        handTurns: p.handTurns,
         overtimeUsed: p.overtimeUsed,
         warnStage: p.warnStage,
       })),
@@ -113,6 +115,7 @@ export class GameStore {
       const p = s.players[i];
       p.remainingMs = ps.remainingMs;
       p.handThinkMs = ps.handThinkMs;
+      p.handTurns = ps.handTurns;
       p.overtimeUsed = ps.overtimeUsed;
       p.warnStage = ps.warnStage;
     });
@@ -128,6 +131,7 @@ export class GameStore {
     if (s.phase !== 'idle') return;
     s.phase = 'running';
     s.handStartedAt = this.now();
+    s.players[s.activeIndex].handTurns += 1; // 最初の手番
     this.emit('start');
   }
 
@@ -137,6 +141,7 @@ export class GameStore {
     if (s.phase !== 'running') return;
     this.pushUndo();
     s.activeIndex = (s.activeIndex + 1) % this.playerCount;
+    s.players[s.activeIndex].handTurns += 1;
     this.emit('turn');
   }
 
@@ -147,6 +152,7 @@ export class GameStore {
     if (index < 0 || index >= this.playerCount || index === s.activeIndex) return;
     this.pushUndo();
     s.activeIndex = index;
+    s.players[index].handTurns += 1;
     this.emit('turn');
   }
 
@@ -189,11 +195,16 @@ export class GameStore {
       players: s.players.map((p) => ({
         name: p.name,
         thinkMs: p.handThinkMs,
+        turns: p.handTurns,
+        avgTurnMs: p.handTurns ? Math.round(p.handThinkMs / p.handTurns) : 0,
         remainingMs: p.remainingMs,
       })),
     });
     // 局内カウンタをリセットして即・次局待ちへ（Undo スタックは残す）
-    for (const p of s.players) p.handThinkMs = 0;
+    for (const p of s.players) {
+      p.handThinkMs = 0;
+      p.handTurns = 0;
+    }
     s.activeIndex = 0;
     s.timeoutIndex = null;
     s.handStartedAt = null;
@@ -300,6 +311,7 @@ export class GameStore {
     for (const p of s.players) {
       p.remainingMs = s.settings.timeMs;
       p.handThinkMs = 0;
+      p.handTurns = 0;
       p.overtimeUsed = false;
       p.warnStage = 0;
     }
@@ -336,6 +348,7 @@ export class GameStore {
       for (const p of st.players) {
         if (typeof p.overtimeUsed !== 'boolean') p.overtimeUsed = false;
         if (typeof p.handThinkMs !== 'number') p.handThinkMs = p.kyokuThinkMs ?? 0;
+        if (typeof p.handTurns !== 'number') p.handTurns = 0;
       }
       if (typeof st.handStartedAt === 'undefined') st.handStartedAt = st.kyokuStartedAt ?? null;
       this.state = st;

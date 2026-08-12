@@ -209,6 +209,52 @@ describe('局終了（ワンタップ記録 → 即次局）', () => {
   });
 });
 
+describe('1打平均（手番回数カウント）', () => {
+  test('start/passTurn/jumpTo で手番回数が増える', () => {
+    const s = startedStore(); // start で東の手番1
+    assert.equal(s.state.players[0].handTurns, 1);
+    s.passTurn(); // 南1
+    assert.equal(s.state.players[1].handTurns, 1);
+    s.jumpTo(0);  // 東2
+    assert.equal(s.state.players[0].handTurns, 2);
+    s.jumpTo(3);  // 北1
+    assert.equal(s.state.players[3].handTurns, 1);
+  });
+
+  test('pause/resume では手番回数は増えない', () => {
+    const s = startedStore();
+    s.pause();
+    s.resume();
+    assert.equal(s.state.players[0].handTurns, 1);
+  });
+
+  test('endHand の記録に手番数と1打平均が入る', () => {
+    const s = startedStore(); // 東1手番目
+    s.tick(3000);
+    s.passTurn();  // 南
+    s.tick(2000);
+    s.jumpTo(0);   // 東2手番目
+    s.tick(1000);
+    s.endHand('ron');
+    const rec = s.state.records[0];
+    assert.equal(rec.players[0].turns, 2);
+    assert.equal(rec.players[0].thinkMs, 4000);
+    assert.equal(rec.players[0].avgTurnMs, 2000); // 4000ms ÷ 2手番
+    assert.equal(rec.players[1].turns, 1);
+    assert.equal(rec.players[1].avgTurnMs, 2000);
+    // 局終了で手番カウンタもリセット
+    assert.equal(s.state.players[0].handTurns, 0);
+  });
+
+  test('Undo で手番回数も戻る', () => {
+    const s = startedStore();
+    s.passTurn(); // 南1
+    s.undo();
+    assert.equal(s.state.players[1].handTurns, 0);
+    assert.equal(s.state.players[0].handTurns, 1);
+  });
+});
+
 describe('Undo', () => {
   test('手番と時間が1手戻る', () => {
     const s = startedStore();

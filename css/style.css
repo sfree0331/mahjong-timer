@@ -215,11 +215,26 @@ button:disabled { opacity: 0.35; pointer-events: none; }
 }
 .player-tile.overtime .overtime-badge { display: inline-block; }
 
+.tile-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+}
+
 .tile-time {
   font-size: calc(40px * var(--fs));
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+}
+
+.tile-avg {
+  font-size: calc(11px * var(--fs));
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+  min-height: 1.2em;
 }
 
 /* 手番は光る */

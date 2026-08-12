@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatMs, recordsToCsv, recordsToJson, summarize } from '../js/core/exporter.js';
+import { formatMs, formatSec, recordsToCsv, recordsToJson, summarize } from '../js/core/exporter.js';
 
 const sampleRecords = [
   {
@@ -10,10 +10,10 @@ const sampleRecords = [
     endedAt: 1700000300000,
     avgThinkMs: 45000,
     players: [
-      { name: 'A', thinkMs: 60000, remainingMs: 540000 },
-      { name: 'B', thinkMs: 30000, remainingMs: 570000 },
-      { name: 'C', thinkMs: 50000, remainingMs: 550000 },
-      { name: 'D', thinkMs: 40000, remainingMs: 560000 },
+      { name: 'A', thinkMs: 60000, turns: 10, avgTurnMs: 6000, remainingMs: 540000 },
+      { name: 'B', thinkMs: 30000, turns: 10, avgTurnMs: 3000, remainingMs: 570000 },
+      { name: 'C', thinkMs: 50000, turns: 10, avgTurnMs: 5000, remainingMs: 550000 },
+      { name: 'D', thinkMs: 40000, turns: 10, avgTurnMs: 4000, remainingMs: 560000 },
     ],
   },
   {
@@ -23,10 +23,10 @@ const sampleRecords = [
     endedAt: 1700000600000,
     avgThinkMs: 30000,
     players: [
-      { name: 'A', thinkMs: 20000, remainingMs: 520000 },
-      { name: 'B', thinkMs: 40000, remainingMs: 530000 },
-      { name: 'C', thinkMs: 30000, remainingMs: 520000 },
-      { name: 'D', thinkMs: 30000, remainingMs: 530000 },
+      { name: 'A', thinkMs: 20000, turns: 5, avgTurnMs: 4000, remainingMs: 520000 },
+      { name: 'B', thinkMs: 40000, turns: 5, avgTurnMs: 8000, remainingMs: 530000 },
+      { name: 'C', thinkMs: 30000, turns: 5, avgTurnMs: 6000, remainingMs: 520000 },
+      { name: 'D', thinkMs: 30000, turns: 5, avgTurnMs: 6000, remainingMs: 530000 },
     ],
   },
 ];
@@ -72,11 +72,29 @@ describe('JSON出力', () => {
 });
 
 describe('集計', () => {
-  test('プレイヤー別合計と平均', () => {
+  test('プレイヤー別合計と局平均・1打平均', () => {
     const t = summarize(sampleRecords);
     assert.equal(t.A.thinkMs, 80000);
     assert.equal(t.A.kyoku, 2);
     assert.equal(t.A.avgThinkMs, 40000);
+    assert.equal(t.A.turns, 15);
+    assert.equal(t.A.avgTurnMs, Math.round(80000 / 15));
     assert.equal(t.B.thinkMs, 70000);
+  });
+
+  test('旧記録（turns なし）でも集計が壊れない', () => {
+    const recs = JSON.parse(JSON.stringify(sampleRecords));
+    for (const r of recs) for (const p of r.players) { delete p.turns; delete p.avgTurnMs; }
+    const t = summarize(recs);
+    assert.equal(t.A.turns, 0);
+    assert.equal(t.A.avgTurnMs, 0);
+  });
+});
+
+describe('formatSec', () => {
+  test('整数秒と小数1桁', () => {
+    assert.equal(formatSec(6000), '6秒');
+    assert.equal(formatSec(12540), '12.5秒');
+    assert.equal(formatSec(0), '0秒');
   });
 });
