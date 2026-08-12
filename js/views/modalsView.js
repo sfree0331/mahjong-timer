@@ -2,7 +2,9 @@
  * ModalsView — 設定 / 対局履歴（保存ログ）
  */
 import { TIME_PRESETS_MIN, RESULT_LABELS } from '../core/store.js';
-import { formatMs, formatSec, recordsToCsv, recordsToJson, summarize } from '../core/exporter.js';
+import {
+  formatDuration, formatSec, recordsToCsv, recordsToJson, summarize,
+} from '../core/exporter.js';
 import { downloadText } from '../services/storage.js';
 
 export class ModalsView {
@@ -174,8 +176,8 @@ export class ModalsView {
     } else {
       const totals = summarize(s.records);
       const totalRows = Object.entries(totals).map(([name, t]) => `
-        <tr><td>${escapeHtml(name)}</td><td>${formatMs(t.thinkMs)}</td>
-        <td>${formatMs(t.avgThinkMs)}</td>
+        <tr><td>${escapeHtml(name)}</td><td>${formatDuration(t.thinkMs)}</td>
+        <td>${formatDuration(t.avgThinkMs)}</td>
         <td>${t.turns ? formatSec(t.avgTurnMs) : '—'}</td></tr>`).join('');
       const items = [...s.records].reverse().map((r) => `
         <div class="history-item">
@@ -185,7 +187,7 @@ export class ModalsView {
             <span class="history-time">${fmtClock(r.startedAt)}〜${fmtClock(r.endedAt)}</span>
           </div>
           <div class="history-players">${r.players.map((p) => `
-            <span>${escapeHtml(p.name)} ${formatMs(p.thinkMs)}${p.turns ? `（1打 ${formatSec(p.avgTurnMs)}）` : ''}</span>`).join('')}
+            <span>${escapeHtml(p.name)} ${formatDuration(p.thinkMs)}${p.turns ? `（1打 ${formatSec(p.avgTurnMs)}）` : ''}</span>`).join('')}
           </div>
         </div>`).join('');
       list.innerHTML = `

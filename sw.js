@@ -1,5 +1,5 @@
 /* Service Worker — アプリシェルの完全オフラインキャッシュ */
-const CACHE = 'mahjong-timer-v2.3.0';
+const CACHE = 'mahjong-timer-v2.3.1';
 const ASSETS = [
   './',
   './index.html',

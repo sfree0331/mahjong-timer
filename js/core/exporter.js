@@ -89,3 +89,10 @@ export function formatSec(ms) {
   const sec = Math.round(ms / 100) / 10;
   return `${sec % 1 === 0 ? sec : sec.toFixed(1)}秒`;
 }
+
+/** ms → "3分24秒" / "45秒" 表示（ログの合計・平均用） */
+export function formatDuration(ms) {
+  const total = Math.round(Math.max(0, ms) / 1000);
+  if (total >= 60) return `${Math.floor(total / 60)}分${total % 60}秒`;
+  return formatSec(ms);
+}

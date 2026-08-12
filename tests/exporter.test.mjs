@@ -1,6 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatMs, formatSec, recordsToCsv, recordsToJson, summarize } from '../js/core/exporter.js';
+import {
+  formatMs, formatSec, formatDuration, recordsToCsv, recordsToJson, summarize,
+} from '../js/core/exporter.js';
 
 const sampleRecords = [
   {
@@ -96,5 +98,15 @@ describe('formatSec', () => {
     assert.equal(formatSec(6000), '6秒');
     assert.equal(formatSec(12540), '12.5秒');
     assert.equal(formatSec(0), '0秒');
+  });
+});
+
+describe('formatDuration', () => {
+  test('1分以上は「X分Y秒」、1分未満は秒表記', () => {
+    assert.equal(formatDuration(204000), '3分24秒');
+    assert.equal(formatDuration(60000), '1分0秒');
+    assert.equal(formatDuration(45000), '45秒');
+    assert.equal(formatDuration(4100), '4.1秒');
+    assert.equal(formatDuration(0), '0秒');
   });
 });
