@@ -1,5 +1,8 @@
 # 麻雀対局タイマー 🀄
 
+**▶ 公開URL: https://sfree0331.github.io/mahjong-timer/**
+（スマホでこのURLを開いて「ホーム画面に追加」でアプリとしてインストールできます）
+
 競技麻雀・健康麻雀・セット麻雀向けの**持ち時間制対局タイマー** PWA。
 チェスクロックのように 4 人が独立した持ち時間を持ち、手番の間だけ時間が減ります。
 対局中に**片手・最小タップ**で操作できることを最優先に設計しています。
@@ -85,8 +88,17 @@ npm test   # コアロジックのユニットテスト（node:test・依存な�
 ```
 
 > **デプロイ時の注意**: Service Worker はキャッシュ優先で配信するため、ファイルを更新したら
-> [sw.js](sw.js) 先頭の `CACHE` バージョン（例: `mahjong-timer-v1.0.1`）を上げてください。
+> [sw.js](sw.js) 先頭の `CACHE` バージョン（例: `mahjong-timer-v2.1.1`）を上げてください。
 > 旧キャッシュは activate 時に自動削除されます。
+
+### 公開（GitHub Pages）の更新手順
+
+公開サイトは `gh-pages` ブランチから配信されています。更新は次の2コマンド:
+
+```bash
+git push origin main
+git push origin main:gh-pages
+```
 
 - 設計書: [docs/DESIGN.md](docs/DESIGN.md)（アーキテクチャ・状態機械・データ構造・イベントフロー・拡張方針）
 - コアロジック（`js/core/`）は DOM 非依存の純粋モジュールで、View（`js/views/`）と
