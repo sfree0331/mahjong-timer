@@ -51,13 +51,16 @@ export class StorageService {
   }
 }
 
-/** ファイルダウンロード（CSV/JSON エクスポート用） */
-export function downloadText(filename, text, mime) {
-  const blob = new Blob([text], { type: mime });
+/** ファイルダウンロード（CSV/JSON/PDF エクスポート用） */
+export function downloadBlob(filename, blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function downloadText(filename, text, mime) {
+  downloadBlob(filename, new Blob([text], { type: mime }));
 }

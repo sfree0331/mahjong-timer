@@ -1,5 +1,5 @@
 /* Service Worker — アプリシェルの完全オフラインキャッシュ */
-const CACHE = 'mahjong-timer-v2.3.1';
+const CACHE = 'mahjong-timer-v2.4.0';
 const ASSETS = [
   './',
   './index.html',
@@ -9,8 +9,10 @@ const ASSETS = [
   './js/core/store.js',
   './js/core/ticker.js',
   './js/core/exporter.js',
+  './js/core/pdf.js',
   './js/services/audio.js',
   './js/services/storage.js',
+  './js/services/pdfReport.js',
   './js/views/boardView.js',
   './js/views/controlsView.js',
   './js/views/modalsView.js',

@@ -5,7 +5,8 @@ import { TIME_PRESETS_MIN, RESULT_LABELS } from '../core/store.js';
 import {
   formatDuration, formatSec, recordsToCsv, recordsToJson, summarize,
 } from '../core/exporter.js';
-import { downloadText } from '../services/storage.js';
+import { downloadText, downloadBlob } from '../services/storage.js';
+import { buildRecordsPdfBytes } from '../services/pdfReport.js';
 
 export class ModalsView {
   /**
@@ -37,6 +38,10 @@ export class ModalsView {
         try { localStorage.setItem(GUIDE_KEY, '1'); } catch { /* noop */ }
       });
     }
+    document.getElementById('btn-export-pdf').addEventListener('click', () => {
+      const bytes = buildRecordsPdfBytes(this.store.state.records);
+      downloadBlob('mahjong-records.pdf', new Blob([bytes], { type: 'application/pdf' }));
+    });
     document.getElementById('btn-export-csv').addEventListener('click', () => {
       downloadText('mahjong-records.csv', recordsToCsv(this.store.state.records), 'text/csv;charset=utf-8');
     });

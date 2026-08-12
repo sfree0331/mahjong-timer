@@ -6,7 +6,7 @@ rem If the server is already running, just open the browser
 netstat -an | findstr ":8793" | findstr "LISTENING" >nul 2>&1
 if not errorlevel 1 goto open
 
-start "mahjong-timer-server" /min python -m http.server 8793
+start "mahjong-timer-server" /min python serve.py
 timeout /t 1 /nobreak >nul
 
 :open
